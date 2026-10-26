@@ -33,19 +33,21 @@ export class CheckoutPage extends BasePage {
    * - country + postal code + house number trigger a postcode lookup (also sent twice)
    *   that overwrites street, city and state.
    * We retry until our input survives, keep the lookup result when it succeeds, and only
-   * type street/city/state when the lookup fails.
+   * type street/city/state when the lookup fails or does not fire.
    */
   async fillBillingAddress(address: Address): Promise<void> {
     await expect(async () => {
-      const lookup = this.page.waitForResponse(isApiCall('/postcode-lookup'), {
-        timeout: 5_000,
-      });
+      // Re-typing unchanged values on a retry may not trigger a new lookup, so a missing
+      // lookup is not an error: we fall back to typing the fields ourselves.
+      const lookup = this.page
+        .waitForResponse(isApiCall('/postcode-lookup'), { timeout: 5_000 })
+        .catch(() => null);
       await this.country.selectOption({ label: address.country });
       await this.postalCode.fill(address.postalCode);
       await this.houseNumber.fill(address.houseNumber);
       const response = await lookup;
 
-      if (response.ok()) {
+      if (response?.ok()) {
         const { street } = (await response.json()) as { street: string };
         await expect(this.street).toHaveValue(street, { timeout: 2_000 });
       } else {
