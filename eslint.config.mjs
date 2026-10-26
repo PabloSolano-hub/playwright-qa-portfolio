@@ -26,6 +26,18 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
   },
   {
+    // Page Objects and helpers drive the browser too: same waiting rules as the specs.
+    files: ['src/**/*.ts'],
+    plugins: { playwright },
+    rules: {
+      'playwright/no-wait-for-timeout': 'error',
+      'playwright/no-force-option': 'error',
+      'playwright/no-element-handle': 'error',
+      'playwright/no-eval': 'error',
+      'playwright/missing-playwright-await': 'error',
+    },
+  },
+  {
     files: ['tests/**/*.ts'],
     ...playwright.configs['flat/recommended'],
     rules: {
