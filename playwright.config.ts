@@ -42,6 +42,8 @@ export default defineConfig({
     {
       name: 'api',
       testDir: './tests/api',
+      // Room for retryOnServerError to wait out the hourly reset of the demo database.
+      timeout: 120_000,
       use: { baseURL: `${env.apiUrl}/` },
     },
     ...(['chromium', 'firefox', 'webkit'] as const).map((browser) => ({
