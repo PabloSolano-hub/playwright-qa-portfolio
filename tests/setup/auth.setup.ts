@@ -1,18 +1,22 @@
+import fs from 'node:fs';
 import { expect, test as setup } from '@playwright/test';
 import { createApiContext } from '@api/api-context';
 import { AuthClient } from '@api/auth-client';
 import type { User } from '@api/types';
 import { buildUser } from '@data/user';
-import { USER_STATE } from '@utils/paths';
+import { env } from '@utils/env';
+import { AUTH_DIR, USER_STATE } from '@utils/paths';
 import { saveTestUser } from '@utils/test-user';
 
 // The Toolshop SPA keeps its JWT in localStorage under "auth-token".
-// Logging in through the API is faster and less flaky than driving the login form.
 const TOKEN_KEY = 'auth-token';
 
 // Each run registers its own user instead of sharing the public demo customer:
 // anyone on the internet can lock that account with three wrong passwords.
-setup('register and authenticate a dedicated test user', async ({ page, playwright }) => {
+//
+// The storage state is written directly instead of through a page, so the setup needs no
+// browser: each CI job installs only the browser it tests.
+setup('register and authenticate a dedicated test user', async ({ playwright }) => {
   const api = await createApiContext(playwright);
   const auth = new AuthClient(api);
   const user = buildUser();
@@ -24,13 +28,15 @@ setup('register and authenticate a dedicated test user', async ({ page, playwrig
   const token = await auth.tokenFor(user);
   await api.dispose();
 
-  await page.addInitScript(
-    ([key, value]) => {
-      window.localStorage.setItem(key, value);
-    },
-    [TOKEN_KEY, token] as const,
-  );
-  await page.goto('/');
-  expect(await page.evaluate((key) => window.localStorage.getItem(key), TOKEN_KEY)).toBe(token);
-  await page.context().storageState({ path: USER_STATE });
+  const storageState = {
+    cookies: [],
+    origins: [
+      {
+        origin: new URL(env.baseUrl).origin,
+        localStorage: [{ name: TOKEN_KEY, value: token }],
+      },
+    ],
+  };
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  fs.writeFileSync(USER_STATE, JSON.stringify(storageState, null, 2));
 });

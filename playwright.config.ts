@@ -4,6 +4,13 @@ import { USER_STATE } from './src/utils/paths';
 
 const isCI = !!process.env.CI;
 
+/**
+ * On GitHub-hosted runners, Cloudflare serves a bot challenge after the login redirect (first to
+ * headless Chromium, then to every browser), so tests tagged with this never reach the page
+ * under test there. They are excluded from CI only and still run locally. See scenarios/login.md.
+ */
+const CLOUDFLARE_CHALLENGED_ON_CI = /@cloudflare-ci/;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -13,9 +20,8 @@ export default defineConfig({
   workers: isCI ? 2 : undefined,
   timeout: 30_000,
   expect: { timeout: 10_000 },
-  reporter: isCI
-    ? [['github'], ['html', { open: 'never' }], ['list']]
-    : [['html', { open: 'never' }], ['list']],
+  // On CI each job writes a blob report; the workflow merges them into one HTML report.
+  reporter: isCI ? [['blob'], ['github'], ['list']] : [['html', { open: 'never' }], ['list']],
   use: {
     baseURL: env.baseUrl,
     testIdAttribute: 'data-test',
@@ -42,6 +48,7 @@ export default defineConfig({
       name: `e2e-${browser}`,
       testDir: './tests/e2e',
       dependencies: ['setup'],
+      grepInvert: isCI ? CLOUDFLARE_CHALLENGED_ON_CI : undefined,
       use: {
         ...devices[
           browser === 'chromium'

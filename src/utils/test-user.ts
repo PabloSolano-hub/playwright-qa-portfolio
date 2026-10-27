@@ -18,6 +18,10 @@ export function readTestUser(): TestUser {
   return JSON.parse(fs.readFileSync(USER_FILE, 'utf8')) as TestUser;
 }
 
+export function testUserExists(): boolean {
+  return fs.existsSync(USER_FILE);
+}
+
 export function removeTestUserFile(): void {
   fs.rmSync(USER_FILE, { force: true });
 }
