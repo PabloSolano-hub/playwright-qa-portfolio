@@ -91,9 +91,35 @@ jobs:
           path: blob-report
           retention-days: 7
 
+  a11y:
+    name: Accessibility (axe)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
+    env:
+      PLAYWRIGHT_BLOB_OUTPUT_NAME: report-a11y.zip
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - run: npx playwright test --project=a11y
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-a11y
+          path: blob-report
+          retention-days: 7
+
   report:
     name: Merge HTML report
-    needs: [api, e2e]
+    needs: [api, e2e, a11y]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
