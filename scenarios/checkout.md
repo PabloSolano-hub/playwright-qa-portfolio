@@ -3,14 +3,13 @@
 ### ESC-CHECKOUT-001 — Compra completa con pago contra reembolso
 
 - Prioridad: Alta
-- Precondiciones: usuario cliente autenticado; existe un producto en stock que no es de alquiler (se obtiene por API)
+- Precondiciones: usuario cliente autenticado; carrito con un producto en stock que no es de alquiler, preparado por API (`POST /carts` + `POST /carts/{id}`) y asociado a la sesión del navegador
 - Pasos:
-  1. Añadir el producto al carrito desde su ficha.
-  2. Abrir el carrito y pulsar «Proceed to checkout».
-  3. En el paso de identificación, continuar como usuario ya autenticado.
-  4. En la dirección de facturación, seleccionar «Spain» e introducir código postal y número; el resto de campos se completa automáticamente.
-  5. Elegir «Cash on Delivery» y confirmar.
-  6. Confirmar el pedido.
+  1. Abrir el carrito (`/checkout`), comprobar que contiene el producto y pulsar «Proceed to checkout».
+  2. En el paso de identificación, continuar como usuario ya autenticado.
+  3. En la dirección de facturación, seleccionar «Spain» e introducir código postal y número; el resto de campos se completa automáticamente.
+  4. Elegir «Cash on Delivery» y confirmar.
+  5. Confirmar el pedido.
 - Resultado esperado: se muestra «Payment was successful» y, tras confirmar, «Thanks for your order!» con un número de factura con formato `INV-<número>`.
 - Automatizado en: tests/e2e/checkout.spec.ts
 - Defectos observados en la aplicación (documentados, no ocultados):

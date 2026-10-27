@@ -4,17 +4,16 @@ import { buildAddress } from '@data/address';
 test.describe('Checkout', () => {
   test('@ESC-CHECKOUT-001 signed-in customer completes checkout with cash on delivery', async ({
     productsApi,
-    productPage,
+    seedCart,
     cartPage,
     checkoutPage,
   }) => {
+    // The cart is prepared through the API: this test covers checkout, not adding to cart.
     const product = await productsApi.findPurchasable();
-
-    await productPage.goto(product.id);
-    await productPage.addToCart();
-    await expect(productPage.header.cartQuantity).toHaveText('1');
+    await seedCart(product.id);
 
     await cartPage.goto();
+    await expect(cartPage.productTitles).toHaveText([product.name]);
     await cartPage.proceedToCheckout();
     await checkoutPage.continueAsSignedInUser();
     await checkoutPage.fillBillingAddress(buildAddress());
