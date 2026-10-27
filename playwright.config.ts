@@ -13,9 +13,8 @@ export default defineConfig({
   workers: isCI ? 2 : undefined,
   timeout: 30_000,
   expect: { timeout: 10_000 },
-  reporter: isCI
-    ? [['github'], ['html', { open: 'never' }], ['list']]
-    : [['html', { open: 'never' }], ['list']],
+  // On CI each job writes a blob report; the workflow merges them into one HTML report.
+  reporter: isCI ? [['blob'], ['github'], ['list']] : [['html', { open: 'never' }], ['list']],
   use: {
     baseURL: env.baseUrl,
     testIdAttribute: 'data-test',
