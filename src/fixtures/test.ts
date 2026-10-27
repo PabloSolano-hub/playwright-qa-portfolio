@@ -1,6 +1,7 @@
 import { test as base, expect, type APIRequestContext } from '@playwright/test';
 import { createApiContext } from '@api/api-context';
 import { AuthClient } from '@api/auth-client';
+import { retryOnServerError } from '@api/retry';
 import { CartsClient } from '@api/carts-client';
 import { ProductsClient } from '@api/products-client';
 import { AccountPage } from '@pages/account.page';
@@ -95,8 +96,12 @@ export const test = base.extend<Pages & Api>({
   },
 
   registeredUser: async ({ authApi, cleanup }, use) => {
-    const user = buildUser();
-    const response = await authApi.register(user);
+    // A fresh user per attempt: a 5xx may still have created the previous one (409 on reuse).
+    let user = buildUser();
+    const response = await retryOnServerError(() => {
+      user = buildUser();
+      return authApi.register(user);
+    }, 'registering a test user');
     await expect(response, 'registering a test user').toBeOK();
     const { id } = (await response.json()) as { id: string };
     cleanup.user(id);
