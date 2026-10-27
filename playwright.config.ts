@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { env } from './src/utils/env';
-import { CUSTOMER_STATE } from './src/utils/paths';
+import { USER_STATE } from './src/utils/paths';
 
 const isCI = !!process.env.CI;
 
@@ -26,6 +26,11 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: 'setup/*.setup.ts',
+      teardown: 'teardown',
+    },
+    {
+      name: 'teardown',
+      testMatch: 'setup/*.teardown.ts',
     },
     {
       name: 'api',
@@ -44,7 +49,7 @@ export default defineConfig({
               ? 'Desktop Firefox'
               : 'Desktop Safari'
         ],
-        storageState: CUSTOMER_STATE,
+        storageState: USER_STATE,
       },
     })),
     {
