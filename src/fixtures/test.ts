@@ -40,11 +40,13 @@ interface Api {
   cleanup: Cleanup;
   /** A fresh user registered through the API for this test only, deleted afterwards. */
   registeredUser: TestUser;
+  /** API token of `registeredUser`. Browserless, so it also works in the API project. */
+  userToken: string;
   /**
    * Signs the browser in as `registeredUser` (JWT injected into localStorage, as the setup does).
-   * For tests whose data must not be shared with other tests or browsers running in parallel.
+   * For UI tests whose data must not be shared with other tests or browsers running in parallel.
    */
-  userToken: string;
+  signedInUser: TestUser;
   /** Favorites of `registeredUser`; deleted on teardown, before the user itself. */
   favoritesApi: FavoritesClient;
   /** Creates a cart through the API and makes the browser session use it. */
@@ -126,12 +128,15 @@ export const test = base.extend<Pages & Api>({
     await use({ ...user, id });
   },
 
-  userToken: async ({ page, authApi, registeredUser }, use) => {
-    const token = await authApi.tokenFor(registeredUser);
+  userToken: async ({ authApi, registeredUser }, use) => {
+    await use(await authApi.tokenFor(registeredUser));
+  },
+
+  signedInUser: async ({ page, registeredUser, userToken }, use) => {
     await page.addInitScript((value) => {
       window.localStorage.setItem('auth-token', value);
-    }, token);
-    await use(token);
+    }, userToken);
+    await use(registeredUser);
   },
 
   favoritesApi: async ({ api, userToken }, use) => {
