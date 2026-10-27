@@ -5,18 +5,20 @@ import { readTestUser } from '@utils/test-user';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Login', () => {
-  test('@ESC-LOGIN-001 customer logs in with valid credentials', async ({
-    loginPage,
-    accountPage,
-    page,
-  }) => {
-    const user = readTestUser();
+  test(
+    '@ESC-LOGIN-001 customer logs in with valid credentials',
+    // Excluded only from the Chromium job on CI: Cloudflare challenges headless Chromium from
+    // GitHub runner IPs. Runs locally and on CI with Firefox and WebKit.
+    { tag: '@cloudflare-chromium-ci' },
+    async ({ loginPage, accountPage, page }) => {
+      const user = readTestUser();
 
-    await loginPage.goto();
-    await loginPage.login(user);
+      await loginPage.goto();
+      await loginPage.login(user);
 
-    await expect(page).toHaveURL(accountPage.url);
-    await expect(accountPage.title).toHaveText('My account');
-    await expect(accountPage.header.userMenu).toHaveText(`${user.first_name} ${user.last_name}`);
-  });
+      await expect(page).toHaveURL(accountPage.url);
+      await expect(accountPage.title).toHaveText('My account');
+      await expect(accountPage.header.userMenu).toHaveText(`${user.first_name} ${user.last_name}`);
+    },
+  );
 });
