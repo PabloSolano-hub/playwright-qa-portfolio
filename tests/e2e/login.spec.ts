@@ -1,5 +1,5 @@
 import { expect, test } from '@fixtures/test';
-import { env } from '@utils/env';
+import { readTestUser } from '@utils/test-user';
 
 // The login form itself is under test, so start without the shared session.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -10,11 +10,13 @@ test.describe('Login', () => {
     accountPage,
     page,
   }) => {
+    const user = readTestUser();
+
     await loginPage.goto();
-    await loginPage.login(env.customer);
+    await loginPage.login(user);
 
     await expect(page).toHaveURL(accountPage.url);
     await expect(accountPage.title).toHaveText('My account');
-    await expect(accountPage.header.userMenu).toHaveText('Jane Doe');
+    await expect(accountPage.header.userMenu).toHaveText(`${user.first_name} ${user.last_name}`);
   });
 });

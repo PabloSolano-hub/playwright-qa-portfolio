@@ -9,7 +9,9 @@ import { CheckoutPage } from '@pages/checkout.page';
 import { HomePage } from '@pages/home.page';
 import { LoginPage } from '@pages/login.page';
 import { ProductPage } from '@pages/product.page';
+import { buildUser } from '@data/user';
 import { env } from '@utils/env';
+import type { TestUser } from '@utils/test-user';
 
 interface Pages {
   homePage: HomePage;
@@ -32,6 +34,8 @@ interface Api {
   productsApi: ProductsClient;
   cartsApi: CartsClient;
   cleanup: Cleanup;
+  /** A fresh user registered through the API for this test only, deleted afterwards. */
+  registeredUser: TestUser;
   /** Creates a cart through the API and makes the browser session use it. */
   seedCart: (productId: string, quantity?: number) => Promise<string>;
 }
@@ -85,9 +89,18 @@ export const test = base.extend<Pages & Api>({
       const adminToken = await authApi.tokenFor(env.admin);
       for (const id of users) {
         const response = await authApi.deleteUser(id, adminToken);
-        expect([204, 404], `cleanup of user ${id}`).toContain(response.status());
+        expect([204, 404, 409], `cleanup of user ${id}`).toContain(response.status());
       }
     }
+  },
+
+  registeredUser: async ({ authApi, cleanup }, use) => {
+    const user = buildUser();
+    const response = await authApi.register(user);
+    await expect(response, 'registering a test user').toBeOK();
+    const { id } = (await response.json()) as { id: string };
+    cleanup.user(id);
+    await use({ ...user, id });
   },
 
   seedCart: async ({ page, cartsApi, cleanup }, use) => {

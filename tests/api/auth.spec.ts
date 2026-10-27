@@ -1,13 +1,15 @@
 import { expect, test } from '@fixtures/test';
 import type { LoginResponse, User } from '@api/types';
 import { buildUser } from '@data/user';
-import { env } from '@utils/env';
 
+// Every test uses its own registered user: wrong passwords against a shared account
+// would lock it (3 failed attempts) for the whole suite and for other visitors.
 test.describe('Auth API', () => {
   test('@ESC-API-AUTH-001 login with valid credentials returns a bearer token', async ({
     authApi,
+    registeredUser,
   }) => {
-    const response = await authApi.login(env.customer);
+    const response = await authApi.login(registeredUser);
 
     expect(response.status()).toBe(200);
     const body = (await response.json()) as LoginResponse;
@@ -16,21 +18,30 @@ test.describe('Auth API', () => {
     expect(body.access_token).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
   });
 
-  test('@ESC-API-AUTH-002 login with a wrong password is rejected', async ({ authApi }) => {
-    const response = await authApi.login({ ...env.customer, password: 'wrong-password' });
+  test('@ESC-API-AUTH-002 login with a wrong password is rejected', async ({
+    authApi,
+    registeredUser,
+  }) => {
+    const response = await authApi.login({ ...registeredUser, password: 'wrong-password' });
 
     expect(response.status()).toBe(401);
     expect(await response.json()).toEqual({ error: 'Unauthorized' });
   });
 
-  test('@ESC-API-AUTH-003 profile is returned only to authenticated users', async ({ authApi }) => {
+  test('@ESC-API-AUTH-003 profile is returned only to authenticated users', async ({
+    authApi,
+    registeredUser,
+  }) => {
     const anonymous = await authApi.me();
     expect(anonymous.status()).toBe(401);
 
-    const token = await authApi.tokenFor(env.customer);
+    const token = await authApi.tokenFor(registeredUser);
     const authenticated = await authApi.me(token);
     expect(authenticated.status()).toBe(200);
-    expect((await authenticated.json()) as User).toMatchObject({ email: env.customer.email });
+    expect((await authenticated.json()) as User).toMatchObject({
+      id: registeredUser.id,
+      email: registeredUser.email,
+    });
   });
 
   test('@ESC-API-AUTH-004 a newly registered user can log in', async ({ authApi, cleanup }) => {
@@ -51,8 +62,11 @@ test.describe('Auth API', () => {
     expect((await (await authApi.me(token)).json()) as User).toMatchObject({ id: created.id });
   });
 
-  test('@ESC-API-AUTH-005 registering an existing email is rejected', async ({ authApi }) => {
-    const response = await authApi.register(buildUser({ email: env.customer.email }));
+  test('@ESC-API-AUTH-005 registering an existing email is rejected', async ({
+    authApi,
+    registeredUser,
+  }) => {
+    const response = await authApi.register(buildUser({ email: registeredUser.email }));
 
     expect(response.status()).toBe(409);
     expect(await response.json()).toEqual({
@@ -60,13 +74,31 @@ test.describe('Auth API', () => {
     });
   });
 
-  test('@ESC-API-AUTH-006 logout invalidates the token', async ({ authApi }) => {
-    // A dedicated token, so the shared customer session used by other tests is not affected.
-    const token = await authApi.tokenFor(env.customer);
+  test('@ESC-API-AUTH-006 logout invalidates the token', async ({ authApi, registeredUser }) => {
+    const token = await authApi.tokenFor(registeredUser);
     expect((await authApi.me(token)).status()).toBe(200);
 
     const logout = await authApi.logout(token);
     expect(logout.status()).toBe(200);
     expect((await authApi.me(token)).status()).toBe(401);
+  });
+
+  test('@ESC-API-AUTH-007 the account is locked after three failed logins', async ({
+    authApi,
+    registeredUser,
+  }) => {
+    const wrong = { ...registeredUser, password: 'wrong-password' };
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      expect((await authApi.login(wrong)).status(), `failed attempt ${attempt}`).toBe(401);
+    }
+
+    const locked = await authApi.login(wrong);
+    expect(locked.status()).toBe(423);
+    expect(await locked.json()).toEqual({
+      error: 'Account locked, too many failed attempts. Please contact the administrator.',
+    });
+
+    // Once locked, even the correct password is refused.
+    expect((await authApi.login(registeredUser)).status()).toBe(423);
   });
 });
