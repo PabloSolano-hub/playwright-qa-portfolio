@@ -13,6 +13,7 @@
     "test:e2e": "playwright test --project=e2e-*",
     "test:api": "playwright test --project=api",
     "test:a11y": "playwright test --project=a11y",
+    "test:perf": "mkdir -p performance/results && k6 run performance/products-load.js",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report",
     "lint": "eslint .",

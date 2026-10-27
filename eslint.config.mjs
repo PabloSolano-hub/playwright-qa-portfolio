@@ -5,7 +5,15 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/', 'playwright-report/', 'test-results/', 'blob-report/', '.auth/'],
+    // performance/ holds k6 scripts: they run in the k6 runtime, not Node, and have no TS project.
+    ignores: [
+      'node_modules/',
+      'playwright-report/',
+      'test-results/',
+      'blob-report/',
+      '.auth/',
+      'performance/',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
