@@ -1,0 +1,37 @@
+name: Performance (k6)
+
+# Low-load check of the public Products API. It never runs on every push or on a schedule:
+# only manually, or when the k6 script itself changes, to keep the load on the shared demo low.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'performance/**'
+      - '.github/workflows/performance.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance
+  cancel-in-progress: false
+
+jobs:
+  k6:
+    name: k6 products load check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: grafana/setup-k6-action@43b9fc21641a76002687994433dd586f56e791b1 # v1.2.2
+        with:
+          k6-version: '2.2.0'
+      - run: mkdir -p performance/results
+      - run: k6 run performance/products-load.js
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: k6-summary
+          path: performance/results
+          retention-days: 14
