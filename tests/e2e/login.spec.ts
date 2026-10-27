@@ -7,9 +7,9 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Login', () => {
   test(
     '@ESC-LOGIN-001 customer logs in with valid credentials',
-    // Excluded only from the Chromium job on CI: Cloudflare challenges headless Chromium from
-    // GitHub runner IPs. Runs locally and on CI with Firefox and WebKit.
-    { tag: '@cloudflare-chromium-ci' },
+    // Excluded from CI only: Cloudflare challenges the post-login page for GitHub runner IPs.
+    // Runs locally on all three browsers; login stays covered on CI by the API auth tests.
+    { tag: '@cloudflare-ci' },
     async ({ loginPage, accountPage, page }) => {
       const user = readTestUser();
 

@@ -5,11 +5,11 @@ import { USER_STATE } from './src/utils/paths';
 const isCI = !!process.env.CI;
 
 /**
- * On GitHub-hosted runners, Cloudflare serves a bot challenge to headless Chromium after the
- * login redirect, so tests tagged with this never reach the page under test there. They still
- * run locally and on CI with Firefox and WebKit. See scenarios/login.md.
+ * On GitHub-hosted runners, Cloudflare serves a bot challenge after the login redirect (first to
+ * headless Chromium, then to every browser), so tests tagged with this never reach the page
+ * under test there. They are excluded from CI only and still run locally. See scenarios/login.md.
  */
-const CLOUDFLARE_CHALLENGED_ON_CI = /@cloudflare-chromium-ci/;
+const CLOUDFLARE_CHALLENGED_ON_CI = /@cloudflare-ci/;
 
 export default defineConfig({
   testDir: './tests',
@@ -48,7 +48,7 @@ export default defineConfig({
       name: `e2e-${browser}`,
       testDir: './tests/e2e',
       dependencies: ['setup'],
-      grepInvert: isCI && browser === 'chromium' ? CLOUDFLARE_CHALLENGED_ON_CI : undefined,
+      grepInvert: isCI ? CLOUDFLARE_CHALLENGED_ON_CI : undefined,
       use: {
         ...devices[
           browser === 'chromium'
