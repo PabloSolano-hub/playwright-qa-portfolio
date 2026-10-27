@@ -32,4 +32,12 @@ Resumen generado al final de la ejecución, tal como lo recibe el revisor. Los a
   - [ ] Confirmar con el autor el comportamiento del segundo clic (aviso vs. toggle).
   - [ ] Confirmar las prioridades.
   - [ ] Revisar que los textos del toast son contrato estable y no copy que pueda cambiar.
-  - [ ] Ver el primer run de CI en firefox/webkit (no instalados en local) y confirmar que `/account/favorites` no recibe el challenge de Cloudflare.
+  - [x] Ver el primer run de CI en firefox/webkit (no instalados en local) y confirmar que `/account/favorites` no recibe el challenge de Cloudflare.
+
+## Resultado del primer run de CI (después de la revisión)
+
+- El punto pendiente se confirmó: en CI, `/account/favorites` recibe el challenge de Cloudflare en los tres navegadores. La parte de la ficha de producto (`POST /favorites` + toast) sí pasó.
+- Decisión del dueño del repositorio:
+  - los tests de interfaz se etiquetan `@cloudflare-ci` (se ejecutan en local);
+  - las reglas de negocio se cubren en CI con `ESC-API-FAV-001/002` (`tests/api/favorites.spec.ts`).
+- Esta lección se añadió a las salvaguardas de `SKILL.md`: si el flujo pasa por `/account`, proponer desde el principio un test de API equivalente.
