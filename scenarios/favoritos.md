@@ -2,6 +2,8 @@
 
 Generados con la skill `manual-to-scenario` a partir del caso manual «CP-27 Favoritos» (ver `.claude/skills/manual-to-scenario/examples/favoritos/`). Cada test usa su propio usuario registrado por API, para que los favoritos no se compartan entre tests ni navegadores en paralelo; al terminar se borran los favoritos y después el usuario.
 
+Nota de CI: en los runners de GitHub, Cloudflare muestra una verificación anti-bot al cargar cualquier página de `/account`, así que estos escenarios se excluyen del CI (etiqueta `@cloudflare-ci`) y se ejecutan en local con los tres navegadores. En CI, las mismas reglas se verifican por API en `ESC-API-FAV-001/002` (`scenarios/api-favoritos.md`).
+
 ### ESC-FAVORITOS-001 — Añadir un producto a favoritos
 
 - Prioridad: Media

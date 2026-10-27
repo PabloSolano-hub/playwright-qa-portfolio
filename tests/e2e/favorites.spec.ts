@@ -2,13 +2,17 @@
 // Requires human review before this header is removed. Source: scenarios/favoritos.md
 import { expect, test } from '@fixtures/test';
 
-// Each test signs in as its own registered user (userToken), so favorites are never shared
+// Each test signs in as its own registered user (signedInUser), so favorites are never shared
 // with other tests or browsers running in parallel.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test.describe('Favorites', () => {
+// Excluded from CI only (@cloudflare-ci): GitHub runner IPs get a Cloudflare challenge on full
+// page loads under /account. Runs locally on all three browsers; the favorites rules stay
+// covered on CI by tests/api/favorites.spec.ts.
+test.describe('Favorites', { tag: '@cloudflare-ci' }, () => {
   test('@ESC-FAVORITOS-001 a product added to favorites appears in My favorites', async ({
     productsApi,
+    signedInUser: user,
     favoritesApi,
     productPage,
     favoritesPage,
@@ -21,11 +25,13 @@ test.describe('Favorites', () => {
     await expect(productPage.toast('Product added to your favorites list.')).toBeVisible();
 
     await favoritesPage.goto();
+    await expect(favoritesPage.header.userMenu).toHaveText(`${user.first_name} ${user.last_name}`);
     await expect(favoritesPage.productNames).toHaveText([product.name]);
   });
 
   test('@ESC-FAVORITOS-002 adding a product that is already a favorite does not duplicate it', async ({
     productsApi,
+    signedInUser: user,
     favoritesApi,
     productPage,
     favoritesPage,
@@ -38,6 +44,7 @@ test.describe('Favorites', () => {
     await expect(productPage.toast('Product already in your favorites list.')).toBeVisible();
 
     await favoritesPage.goto();
+    await expect(favoritesPage.header.userMenu).toHaveText(`${user.first_name} ${user.last_name}`);
     await expect(favoritesPage.productNames).toHaveText([product.name]);
   });
 });
